@@ -1,7 +1,7 @@
 {
   "name": "Digital E-Library",
   "short_name": "E-Library",
-  "description": "A safe, joyful digital library with an AI Reading Buddy and learning games for children.",
+  "description": "A joyful static digital library with stories, learning games, and offline progress.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

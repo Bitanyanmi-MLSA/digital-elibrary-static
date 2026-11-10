@@ -90,25 +90,25 @@ td,th{padding:8px;border-bottom:1px solid #0002;text-align:left}
   <h1>📚 Digital E-Library <small id="who"></small></h1>
   <nav id="nav">
     <button data-v="home" class="on">Library</button>
-    <button data-v="buddy" id="nbuddy">AI Buddy</button>
+    <button data-v="buddy" id="nbuddy">Reading Helper</button>
     <button data-v="games" class="kidsonly">Play Zone</button>
     <button data-v="me" id="nme">My Badges</button>
-    <button data-v="staff">Staff</button>
   </nav>
   <button onclick="toggle('big')" title="Large text">A+</button>
   <button onclick="toggle('hc')" title="High contrast">◐</button>
-  <button onclick="logout()">Sign out</button>
+  <button onclick="logout()">Change library</button>
   <button id="inst" class="hide" onclick="installApp()">⬇ Install app</button>
 </header>
 
 <main>
-<div id="offb" class="card hide" style="background:#fff3cd;text-align:center">📴 You're offline. Books you opened before are still available.</div><section id="v-login" class="card login">
-  <h1>📚 Welcome!</h1>
-  <p>Enter your 4-digit library code.</p>
-  <div class="dots" id="dots">····</div>
-  <div class="pad" id="pad"></div>
-  <p id="lerr" style="color:var(--r);min-height:1.4em"></p>
-  <p><small>No email needed. <a href="#" onclick="show('staff');return false">Administrator</a></small></p>
+<div id="offb" class="card hide" style="background:#fff3cd;text-align:center">📴 You're offline. Built-in stories, games and saved progress are still available.</div><section id="v-login" class="card login">
+  <h1>📚 Welcome to the Digital E-Library!</h1>
+  <p>Choose a library to begin. Your progress is saved only in this browser.</p>
+  <div class="sp" style="justify-content:center">
+    <button onclick="enter('Reader','kids')">👧 Kids Library</button>
+    <button onclick="enter('Reader','adult')">🧑 Adult Library</button>
+  </div>
+  <p><small>This public static version has no accounts, private access codes, AI assistant or staff tools. Adult mode is a reading preference, not a restriction.</small></p>
 </section>
 
 <section id="v-home" class="hide">
@@ -142,24 +142,10 @@ td,th{padding:8px;border-bottom:1px solid #0002;text-align:left}
   </div>
 </section>
 
-<section id="v-pdf" class="hide">
-  <div class="card" style="padding:12px">
-    <div class="sp" style="position:sticky;top:70px;background:var(--card);z-index:4;padding:6px 0">
-      <button onclick="closePdf()">← Back</button>
-      <b id="pdft" style="flex:1;min-width:120px"></b>
-      <span id="pdfpg"></span>
-      <button onclick="pdfJump()" title="Go to page">⤵ Page</button>
-      <button onclick="pdfZoom(-.2)" title="Zoom out">−</button>
-      <button onclick="pdfZoom(.2)" title="Zoom in">+</button>
-    </div>
-    <div id="pdfbody" style="text-align:center;background:#0001;border-radius:8px;padding:8px;overflow-x:auto"></div>
-  </div>
-</section>
-
 <section id="v-buddy" class="hide">
   <div class="card">
-    <h2>🦉 Kofi the Reading Buddy</h2>
-    <small>🤖 I'm an AI helper, not a person. Powered by Azure OpenAI with child-safety filtering. Unsafe questions are flagged to the librarian.</small>
+    <h2>🦉 Kofi's Offline Reading Helper</h2>
+    <small>This helper uses a small set of pre-written replies. Nothing is sent to an AI service, and questions are not monitored.</small>
     <div class="chat" id="chat"></div>
     <div class="sp">
       <input type="text" id="ci" placeholder="Ask about a story or word…" style="flex:1">
@@ -193,28 +179,6 @@ td,th{padding:8px;border-bottom:1px solid #0002;text-align:left}
   </div>
 </section>
 
-<section id="v-staff" class="hide">
-  <div class="card" id="staffgate">
-    <h2>Administrator</h2>
-    <p>Enter the administrator passcode to manage library codes.</p>
-    <input type="password" id="spin" placeholder="Passcode" style="max-width:260px">
-    <button onclick="staffIn()">Open</button> <button style="background:#eee" onclick="show(st.user?'home':'login')">← Back</button>
-    <p id="aerr" style="color:var(--r)"></p>
-  </div>
-  <div id="staffbody" class="hide">
-    <div class="kpis card" id="akpi"></div>
-    <div class="card">
-      <h3>➕ Create a library code</h3>
-      <div class="sp"><input type="text" id="nname" placeholder="Member's name" maxlength="40" style="max-width:300px">
-        <select id="ntype" title="Code category"><option value="kids">👧 Kids library</option><option value="adult">🧑 Adult library</option></select>
-        <button onclick="mkCode()">Generate 4-digit code</button></div>
-      <p id="newcode"></p>
-    </div>
-    <div class="card"><h3>Library codes</h3><div style="overflow:auto"><table id="codes"></table></div></div>
-    <div class="card"><h3>🚩 Flagged AI conversations (review queue)</h3><table id="alerts"></table></div>
-    <div class="sp">    <button onclick="staffOut()">Lock administrator</button> <button style="background:#eee" onclick="staffOut();show(st.user?'home':'login')">← Back</button></div>
-  </div>
-</section>
 </main>
 
 <script src="js/ges1.js"></script>
@@ -275,84 +239,77 @@ q:[["Green in kente stands for…",["Growth","War","Rain"],0]]}
 ];
 const AGES=['All','3–6','6–12','12–15','16–19'],TYPES=['All','Book','Lesson','Video','Audio'];
 const DEF={cedis:'Ghana money',wisdom:'knowing what is right and wise',struggled:'tried hard but found it difficult',finish:'the end of a race',shepherd:'a person who looks after sheep',magma:'hot melted rock under the ground',kente:'colourful woven cloth from Ghana',gather:'to come together',gathered:'came together',clay:'soft earth used to make pots',reaction:'when things change into something new',ananse:'the clever spider in Akan stories',pods:'the cases that hold seeds',hunters:'people who catch animals',net:'a mesh made of ropes',royalty:'kings and queens'};
-const st={role:'kids',age:'All',type:'All',q:'',cur:null,pin:'',user:null,code:null,read:{},fav:new Set(),badges:new Set(),stars:0,meta:{},shelf:'Starter Stories'};
-const BASE='https://funcflex-elibrary-47854.azurewebsites.net/api';
+const st={role:'kids',age:'All',type:'All',q:'',cur:null,user:null,read:{},fav:new Set(),badges:new Set(),stars:0,meta:{},shelf:'Starter Stories'};
 const KIDS_SHELVES=['Starter Stories','Fables & Folktales','Animals & Nature','Adventure & Fantasy','Family & Growing Up','Open Library'];
 const GES_BASE='https://curriculumresources.edu.gh/wp-content/uploads/';
-const GES_NOTE='Official free learner textbooks published by the Ministry of Education / GES. Tap a book to read it right here in the app.';
+const GES_NOTE='Official free learner textbooks published by the Ministry of Education / GES. Books open on the Ministry resource site.';
 const gesList=(yr,rows)=>rows.map(([t,e,p])=>[t+' – Year '+yr,GES_BASE+p,e,'SHS Year '+yr+' learner\'s book (PDF)']);
+const BOOK_SHELVES={
+ kids:{
+  'Fables & Folktales':[[19994,'The Aesop for Children','Aesop'],[21,"Three Hundred Aesop's Fables",'Aesop'],[2591,"Grimms' Fairy Tales",'Jacob & Wilhelm Grimm'],[1597,"Andersen's Fairy Tales",'H. C. Andersen'],[17208,'The Tales of Mother Goose','Charles Perrault'],[2781,'Just So Stories','Rudyard Kipling']],
+  'Animals & Nature':[[236,'The Jungle Book','Rudyard Kipling'],[289,'The Wind in the Willows','Kenneth Grahame'],[271,'Black Beauty','Anna Sewell'],[14838,'The Tale of Peter Rabbit','Beatrix Potter'],[1018,'The Water-Babies','Charles Kingsley']],
+  'Adventure & Fantasy':[[11,"Alice's Adventures in Wonderland",'Lewis Carroll'],[12,'Through the Looking-Glass','Lewis Carroll'],[16,'Peter Pan','J. M. Barrie'],[55,'The Wonderful Wizard of Oz','L. Frank Baum'],[500,'The Adventures of Pinocchio','Carlo Collodi'],[778,'Five Children and It','E. Nesbit'],[18857,'A Journey to the Centre of the Earth','Jules Verne']],
+  'Family & Growing Up':[[113,'The Secret Garden','Frances Hodgson Burnett'],[1448,'Heidi','Johanna Spyri'],[45,'Anne of Green Gables','L. M. Montgomery'],[514,'Little Women','Louisa May Alcott'],[1874,'The Railway Children','E. Nesbit']]
+ },
+ adult:{
+  'Classic Literature':[[1342,'Pride and Prejudice','Jane Austen'],[1260,'Jane Eyre','Charlotte Brontë'],[768,'Wuthering Heights','Emily Brontë'],[98,'A Tale of Two Cities','Charles Dickens'],[1400,'Great Expectations','Charles Dickens'],[2701,'Moby-Dick','Herman Melville'],[2554,'Crime and Punishment','Fyodor Dostoevsky'],[64317,'The Great Gatsby','F. Scott Fitzgerald']],
+  'Mystery & Thrillers':[[1661,'The Adventures of Sherlock Holmes','Arthur Conan Doyle'],[2852,'The Hound of the Baskervilles','Arthur Conan Doyle'],[345,'Dracula','Bram Stoker'],[84,'Frankenstein','Mary Shelley'],[174,'The Picture of Dorian Gray','Oscar Wilde'],[1184,'The Count of Monte Cristo','Alexandre Dumas']],
+  'Philosophy & Leadership':[[1232,'The Prince','Niccolò Machiavelli'],[2680,'Meditations','Marcus Aurelius'],[132,'The Art of War','Sun Tzu'],[1497,'The Republic','Plato'],[205,'Walden','Henry David Thoreau'],[5827,'The Problems of Philosophy','Bertrand Russell']],
+  'Science & Society':[[1228,'On the Origin of Species','Charles Darwin'],[3300,'The Wealth of Nations','Adam Smith'],[35,'The Time Machine','H. G. Wells'],[36,'The War of the Worlds','H. G. Wells'],[4363,'Beyond Good and Evil','Friedrich Nietzsche']],
+  'SHS Science':[[14474,'The Chemical History of a Candle','Michael Faraday'],[20848,'An Elementary Study of Chemistry','William McPherson & William E. Henderson'],[22766,'Electricity for Boys','James Slough Zerbe'],[28553,'How it Works','Archibald Williams'],[15491,'Micrographia','Robert Hooke'],[944,'The Voyage of the Beagle','Charles Darwin']],
+  'SHS Mathematics':[[33283,'Calculus Made Easy','Silvanus P. Thompson'],[13309,'A First Book in Algebra','Wallace C. Boyden'],[38536,'A Review of Algebra','Romeyn Henry Rivenburg'],[21154,'Philosophy and Fun of Algebra','Mary Everest Boole'],[32973,'Elements of Plane Trigonometry','Hugh Blackburn'],[21076,'The First Six Books of the Elements of Euclid','John Casey'],[68662,'Elements of Arithmetic','Augustus De Morgan'],[201,'Flatland','Edwin A. Abbott']],
+  'SHS Geography & Agriculture':[[61652,'Physical Geography','Mary Somerville'],[37957,'Man and Nature: Physical Geography as Modified by Human Action','George P. Marsh'],[27378,'The Story of the Heavens','Robert S. Ball'],[25267,'Astronomy for Amateurs','Camille Flammarion'],[70973,'The Agricultural and Forest Products of British West Africa','Gerald C. Dudgeon'],[30975,'Soil Culture','J. H. Walden'],[79736,'Journal of a Residence in Ashantee','Joseph Dupuis']],
+  'SHS English Literature':[[1522,'Julius Caesar','William Shakespeare'],[1533,'Macbeth','William Shakespeare'],[2267,'Othello','William Shakespeare'],[1513,'Romeo and Juliet','William Shakespeare'],[1524,'Hamlet','William Shakespeare'],[2243,'The Merchant of Venice','William Shakespeare']],
+  'Economics & Government':[[3300,'The Wealth of Nations','Adam Smith'],[61,'The Communist Manifesto','Karl Marx & Friedrich Engels'],[46333,'The Social Contract & Discourses','Jean-Jacques Rousseau'],[60979,'Reminiscences of a Stock Operator','Edwin Lefèvre']]
+ }
+};
 const LINK_SHELVES={
  'Ghana Curriculum (GES)':{note:'Official Ghana curriculum and learning resources. Aki-Ola and other commercial textbooks are copyrighted and are not hosted here.',items:[['NaCCA SHS Curriculum','https://nacca.gov.gh/secondary-education-curriculum/','📘','Official syllabuses for all SHS subjects'],['MoE Year 1 Learning Materials','https://curriculumresources.edu.gh/year1/','1️⃣','Year 1 textbooks, released by section'],['MoE Learning Resources','https://curriculumresources.edu.gh/','🏛️','All curriculum documents and materials'],['NaCCA Home','https://nacca.gov.gh/','📚','National Council for Curriculum and Assessment']]},
  'GES SHS Year 3 Books':{note:GES_NOTE,items:gesList(3,[['English Language','🗣️','2026/09/English-Language_LM_Year-3_-LV.pdf'],['Mathematics','➗','2026/09/Mathematics_LM_Y3-FINAL-LEARNERS-VERSION.pdf'],['Additional Mathematics','📐','2026/09/Additional-Maths-LM-Y3-LV.pdf'],['Social Studies','🌍','2026/09/Social-Studies_LM_Y3_Online_LV.pdf'],['General Science','🔬','2026/09/General-Science_LM_Y3_Online_LV.pdf'],['Physics','⚛️','2026/09/LM-Physics-book-3LVersion-.pdf'],['Chemistry','🧪','2026/09/LM-Chemistry-book-3-LVersion-.pdf'],['Biology','🧬','2026/09/Biology-Year-3-LM-LV.pdf'],['Geography','🗺️','2026/09/Geography-Year-3-LM-LV.pdf'],['History','🏺','2026/09/HISTORY-book-3-LVersion.pdf'],['Government','🏛️','2026/09/GOVERNMENT-YEAR-3-LV.-ONLINE.pdf'],['Economics','📈','2026/09/ECONOMICS-YEAR-3-LV-ONLINE.pdf'],['ICT','💻','2026/09/ICT-YEAR-3-LV-ONLINE.pdf'],['Computing','🖥️','2026/09/Computing_LM_Y3_Online_LV.pdf'],['Accounting','🧾','2026/09/Accounting_LM_Y3_Online_LV.pdf'],['Business Management','💼','2026/09/Business-Management-Year-3-LM-LV.pdf'],['Agricultural Science','🌾','2026/09/Agricultural-Science-LM_Y3-LEARNERS-VERSION_FINAL.pdf'],['Literature in English','📖','2026/09/Literature-In-English_LM_Y3_Online.pdf'],['Religious & Moral Education','🕊️','2026/09/RME-YEAR-3-LV-ONLINE.pdf']])},
  'GES SHS Year 2 Books':{note:GES_NOTE,items:gesList(2,[['English Language','🗣️','2025/12/English-Language_LM_Year-2_-LV-Online.pdf'],['Mathematics','➗','2025/12/LM-maths-Book-2-LVersion.pdf'],['Additional Mathematics','📐','2025/12/Additional-Maths-book-2-Lversion.pdf'],['Social Studies','🌍','2026/01/SOCIAL-STUDIES-Y2-LM_LEARNERS-VERSION.pdf'],['General Science','🔬','2025/10/General-science-LM-book-2-LVersion.pdf'],['Physics','⚛️','2025/11/LM-Physics-book-2-_online.pdf'],['Chemistry','🧪','2025/11/LM-Chemistry-book-LVersion_REPLACEMENT.pdf'],['Biology','🧬','2025/10/LM-Biology-book-2-learner-version.pdf'],['Geography','🗺️','2025/10/Geography_YEAR-2.pdf'],['History','🏺','2025/10/LM-History-book-2-LVersion.pdf'],['Government','🏛️','2025/10/Government_YEAR-2.pdf'],['Economics','📈','2025/10/ECONOMICS-YEAR-2-LV-ONLINE.pdf'],['ICT','💻','2025/10/ICT-YEAR-2-LV-ONLINE.pdf'],['Accounting','🧾','2025/12/Accounting_LM_year-2_-LV-Online.pdf'],['Business Management','💼','2025/12/Business-Management-2-covered-lv.pdf'],['Agricultural Science','🌾','2025/12/Agricultural-Science-LV-ONLINE.pdf'],['Literature in English','📖','2025/10/Literature-In-English_LM_Y2_Learner-Edition_Online.pdf']])}
 };
 const GES_SHELF='Ghana Curriculum (GES)';
-LINK_SHELVES['GES SHS Year 1 Books']={note:'Official free Year 1 learner textbooks from the Ministry of Education / GES. Pick a subject, then a section, and read it right here in the app.',items:GES1.map((g,i)=>[g[0]+' – Year 1','ges1:'+i,'📗',g[1].length+' sections'])};
+LINK_SHELVES['GES SHS Year 1 Books']={note:'Official free Year 1 learner textbooks from the Ministry of Education / GES. Pick a subject, then a section; books open on the Ministry resource site.',items:GES1.map((g,i)=>[g[0]+' – Year 1','ges1:'+i,'📗',g[1].length+' sections'])};
 const ADULT_SHELVES=['GES SHS Year 3 Books','GES SHS Year 2 Books','GES SHS Year 1 Books',GES_SHELF,'Classic Literature','Mystery & Thrillers','Philosophy & Leadership','Science & Society','SHS Science','SHS Mathematics','SHS Geography & Agriculture','SHS English Literature','Economics & Government','Open Library'];
 let SHELVES=KIDS_SHELVES;
 const isAdult=()=>st.role==='adult';
-const PAGE=6;
-let token=null;
-
-const OFFLINE_RE=/^\/lib\/(text|catalog|discover)\?/;
-async function api(path,opts={}){
- const cacheable=OFFLINE_RE.test(path)&&'caches' in window,ck=new Request(BASE+path);
- let r;
- try{r=await fetch(BASE+path,{...opts,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...(opts.headers||{})},signal:AbortSignal.timeout(30000)})}
- catch(e){if(cacheable){const c=await (await caches.open('elib-data')).match(ck);if(c)return c.json()}throw e}
- if(r.status===401&&token&&!opts.admin){logout('Please sign in again.')}
- if(cacheable&&r.ok)caches.open('elib-data').then(c=>c.put(ck,r.clone())).catch(()=>{});
- const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||j.reply||'Request failed'),{status:r.status});return j}
 addEventListener('offline',()=>{const b=document.getElementById('offb');if(b)b.classList.remove('hide')});
 addEventListener('online',()=>{const b=document.getElementById('offb');if(b)b.classList.add('hide')});
-function pkey(){return 'elib-'+st.code}
-function save(){if(!st.code)return;try{localStorage.setItem(pkey(),JSON.stringify({read:st.read,fav:[...st.fav],badges:[...st.badges],stars:st.stars,meta:st.meta}))}catch(e){}}
+function pkey(){return 'elib-static-'+st.role}
+function save(){try{localStorage.setItem(pkey(),JSON.stringify({read:st.read,fav:[...st.fav],badges:[...st.badges],stars:st.stars,meta:st.meta}))}catch(e){}}
 function restore(){try{const d=JSON.parse(localStorage.getItem(pkey())||'{}');st.read=d.read||{};st.fav=new Set(d.fav||[]);st.badges=new Set(d.badges||[]);st.stars=d.stars||0;st.meta=d.meta||{}}catch(e){}}
-function track(read,logout){if(token)api('/lib/track',{method:'POST',keepalive:true,body:JSON.stringify({read:!!read,stars:st.stars,logout:!!logout})}).catch(()=>{})}
-setInterval(()=>{if(token&&document.visibilityState==='visible')track(false)},60000);
-document.addEventListener('visibilitychange',()=>{if(token&&document.visibilityState==='visible')track(false)});
 
 function show(v){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hide'));$('#v-'+v).classList.remove('hide');
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
- if(v==='home')renderHome();if(v==='me')renderMe();if(v==='staff')renderStaff();
- if(v==='buddy'&&!$('#chat').children.length)bot(isAdult()?"Hello, I'm Kofi 🦉 your AI library assistant. Ask me about a book, an author, a theme or a word.":"Hello! I'm Kofi 🦉 Ask me about a story you read or a hard word.");}
+ if(v==='home')renderHome();if(v==='me')renderMe();
+ if(v==='buddy'&&!$('#chat').children.length)bot("Hello! I'm Kofi 🦉 I can answer a few common questions about books and words.");}
 function toggle(c){document.body.classList.toggle(c)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{stopRead();show(b.dataset.v)});
 
-function drawPad(){const p=$('#pad');p.innerHTML='';[1,2,3,4,5,6,7,8,9,'C',0,'✔'].forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>key(k);p.appendChild(b)})}
-function key(k){if(k==='C')st.pin='';else if(k==='✔'){if(st.pin.length===4)doLogin()}else if(st.pin.length<4){st.pin+=k;if(st.pin.length===4){$('#dots').textContent='●●●●';setTimeout(doLogin,200);return}}
- $('#dots').textContent=(st.pin.replace(/./g,'●')+'····').slice(0,4)}
-let logging=false;
-async function doLogin(){const code=st.pin;if(code.length!==4||logging)return;logging=true;st.pin='';$('#lerr').textContent='';
- try{await doLogin2(code)}finally{logging=false}}
-async function doLogin2(code){
- try{const j=await api('/lib/login',{method:'POST',body:JSON.stringify({code})});token=j.token;st.code=code;localStorage.setItem('elib-session',JSON.stringify({token,name:j.name,code}));enter(j.name,j.type)}
- catch(e){$('#dots').textContent='····';$('#lerr').textContent=e.status===undefined?'Cannot reach the library. Check your internet.':e.message}}
 const SUGG_KIDS=['Who is Ananse?','What does wisdom mean?','Recommend a book','Why is the sky blue?'];
 const SUGG_ADULT=['Recommend a classic to read','Summarise the themes of this book','Explain a literary term','Help me start a reading habit'];
 function applyRole(role){st.role=role==='adult'?'adult':'kids';const a=isAdult();document.body.classList.toggle('adult',a);SHELVES=a?ADULT_SHELVES:KIDS_SHELVES;st.shelf=SHELVES[0];st.q='';$('#q').value='';
  $('#q').placeholder=a?'🔍 Search titles and authors…':'🔍 Search books, authors, stories…';
- $('#nbuddy').textContent=a?'AI Assistant':'AI Buddy';$('#nme').textContent=a?'My Shelf':'My Badges';
- $('#v-buddy h2').textContent=a?'🦉 Kofi the AI Library Assistant':'🦉 Kofi the Reading Buddy';
- $('#v-buddy small').textContent=a?"🤖 I'm an AI assistant, not a person. Powered by Azure OpenAI. Answers may contain mistakes, so please verify important facts.":"🤖 I'm an AI helper, not a person. Powered by Azure OpenAI with child-safety filtering. Unsafe questions are flagged to the librarian.";
+ $('#nbuddy').textContent='Reading Helper';$('#nme').textContent=a?'My Shelf':'My Badges';
+ $('#v-buddy h2').textContent="🦉 Kofi's Offline Reading Helper";
+ $('#v-buddy small').textContent='This helper uses pre-written replies only. Nothing is sent to an AI service, and questions are not monitored.';
  $('#v-me h2').textContent=a?'📚 My Shelf':'⭐ My Progress';
  $('#chat').innerHTML='';hist.length=0;
  $('#sugg').innerHTML='';(a?SUGG_ADULT:SUGG_KIDS).forEach(l=>{const c=document.createElement('span');c.className='chip';c.textContent=l;c.onclick=()=>ask(l);$('#sugg').appendChild(c)})}
-function enter(n,role){applyRole(role);restore();st.user=n;track(false);$('#dots').textContent='····';$('#who').textContent=isAdult()?'– Welcome, '+n:'– Hi, '+n+'! 👋';$('#hdr').classList.remove('hide');startTimer();show('home')}
-function logout(msg){if(typeof msg!=='string')track(false,true);stopRead();hist.length=0;st.user=null;st.code=null;token=null;st.cur=null;localStorage.removeItem('elib-session');$('#hdr').classList.add('hide');$('#chat').innerHTML='';clearInterval(tm);applyRole('kids');show('login');$('#lerr').textContent=typeof msg==='string'?msg:''}
-function resume(){try{const s=JSON.parse(localStorage.getItem('elib-session')||'null');if(!s)return;const p=JSON.parse(atob(s.token.split('.')[0].replace(/-/g,'+').replace(/_/g,'/')));if(p.exp<Date.now())return localStorage.removeItem('elib-session');token=s.token;st.code=s.code;enter(s.name,p.t)}catch(e){}}
+function enter(n,role){applyRole(role);restore();st.user=n;$('#who').textContent=isAdult()?'– Adult Library':'– Kids Library 👋';$('#hdr').classList.remove('hide');startTimer();show('home')}
+function logout(){stopRead();hist.length=0;st.user=null;st.cur=null;$('#hdr').classList.add('hide');$('#chat').innerHTML='';clearInterval(tm);show('login')}
 let tm,secs=900;function startTimer(){secs=900;clearInterval(tm);if(isAdult())return;tm=setInterval(()=>{secs--;const t=$('#timer');if(t)t.textContent=Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');if(secs<=0){clearInterval(tm);alert('Time for a reading break! 📖')}},1000)}
 
 function chips(el,arr,key){el.innerHTML='';arr.forEach(a=>{const c=document.createElement('span');c.className='chip'+(st[key]===a?' on':'');c.textContent=a;c.onclick=()=>{st[key]=a;renderHome()};el.appendChild(c)})}
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let homeTok=0;
-function tileHtml(b){const rid='g'+b.id;return `<div class="tile" onclick="openRemote(${b.id})"><div class="cover" style="background:${COV[b.id%6]}"><img src="${esc(b.cover)}" alt="" loading="lazy" style="max-height:130px;max-width:100%" onerror="this.replaceWith('📖')"></div><div class="t">${st.fav.has(rid)?'❤️ ':''}${esc(b.title)}<small>${esc(b.author)}</small></div></div>`}
+function openGutenberg(id){const book=Object.values(BOOK_SHELVES[st.role]||{}).flat().find(b=>b[0]===id);const title=book?book[1]:'Project Gutenberg book';const rid='g'+id;st.read[rid]=1;st.meta[rid]={t:title,id};save();window.open('https://www.gutenberg.org/ebooks/'+id,'_blank','noopener')}
+function tileHtml(b){const rid='g'+b.id,cover='https://www.gutenberg.org/cache/epub/'+b.id+'/pg'+b.id+'.cover.medium.jpg';
+ return `<div class="tile"><div onclick="openGutenberg(${b.id})"><div class="cover" style="background:${COV[b.id%6]}"><img src="${cover}" alt="" loading="lazy" style="max-height:130px;max-width:100%" onerror="this.replaceWith('📖')"></div><div class="t">${st.fav.has(rid)?'❤️ ':''}${esc(b.title)}<small>${esc(b.author)}<br>Read at Project Gutenberg ↗</small></div></div><button style="margin:0 10px 10px" onclick="fav('${rid}')">${st.fav.has(rid)?'❤️ Saved':'🤍 Save'}</button></div>`}
 function recent(){const ks=Object.keys(st.read),last=ks[ks.length-1];if(!last)return '<b>👋 Pick a story to start your first reading mission!</b>';
  if(last.startsWith('pdf:')){const m=st.meta[last];return m?`<b>▶ Continue reading:</b> ${esc(m.t)} <button onclick="openPdf('${m.url}','${m.t.replace(/'/g,'')}')">Continue</button>`:'<b>👋 Pick a book to start!</b>'}
  const m=last.startsWith('g')?st.meta[last]:LIB.find(x=>x.id==last);if(!m)return '<b>👋 Pick a story to start!</b>';
- return `<b>▶ Continue reading:</b> ${esc(m.t)} <button onclick="${last.startsWith('g')?`openRemote(${last.slice(1)})`:`openBook(${last})`}">Continue</button>`}
-async function renderHome(){const tok=++homeTok;chips($('#shelves'),SHELVES,'shelf');
- const local=st.shelf==='Starter Stories'||st.q.trim();
+ return `<b>▶ Continue reading:</b> ${esc(m.t)} <button onclick="${last.startsWith('g')?`openGutenberg(${m.id})`:`openBook(${last})`}">Continue</button>`}
+function renderHome(){chips($('#shelves'),SHELVES,'shelf');
  $('#ages').classList.toggle('hide',st.shelf!=='Starter Stories');$('#types').classList.toggle('hide',st.shelf!=='Starter Stories');
  if(st.shelf==='Starter Stories'){chips($('#ages'),AGES,'age');chips($('#types'),TYPES,'type')}
  $('#cont').innerHTML=recent();
@@ -362,89 +319,36 @@ async function renderHome(){const tok=++homeTok;chips($('#shelves'),SHELVES,'she
  const g=$('#grid');
  if(!isAdult()&&st.shelf==='Starter Stories'&&!q){g.innerHTML=locHtml||'<p>No items found.</p>';return}
  if(isAdult()&&LINK_SHELVES[st.shelf]){const L=LINK_SHELVES[st.shelf];
-  if(st.ges1!=null&&st.shelf==='GES SHS Year 1 Books'&&GES1[st.ges1]){const G=GES1[st.ges1];g.innerHTML=`<p style="grid-column:1/-1"><button onclick="st.ges1=null;renderHome()">← All Year 1 subjects</button> <b>${G[0]}</b></p>`+G[1].map((p,i)=>`<div class="tile" onclick="openPdf('${GES_BASE+p}','${G[0]} – Section ${i+1}')"><div class="cover" style="background:#e8f5ec">📗</div><div class="t">Section ${i+1}<small>${G[0]} – Year 1<br>Read in the app 📖</small></div></div>`).join('');return}
-  g.innerHTML=`<p style="grid-column:1/-1">${L.note}</p>`+L.items.filter(l=>!q||l[0].toLowerCase().includes(q)).map(l=>l[1].startsWith('ges1:')?`<div class="tile" onclick="st.ges1=${+l[1].slice(5)};renderHome();window.scrollTo(0,0)"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Choose a section ›</small></div></div>`:l[1].startsWith(GES_BASE)&&l[1].endsWith('.pdf')?`<div class="tile" onclick="openPdf('${l[1]}','${l[0].replace(/'/g,'')}')"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Read in the app 📖</small></div></div>`:`<a class="tile" href="${l[1]}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Opens in a new tab ↗</small></div></a>`).join('');return}
- g.innerHTML=locHtml+'<p>⏳ Loading books…</p>';
- try{let h='';
-  if(st.shelf==='Open Library'){const j=await api('/lib/discover?q='+encodeURIComponent(q));if(tok!==homeTok)return;
-   h=j.books.map(b=>`<a class="tile" href="${esc(b.url)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f0ff">${b.cover?`<img src="${esc(b.cover)}" alt="" loading="lazy" style="max-height:130px;max-width:100%" onerror="this.replaceWith('📘')">`:'📘'}</div><div class="t">${esc(b.title)}<small>${esc(b.author)}${b.year?' · '+b.year:''}<br>Opens on Open Library ↗</small></div></a>`).join('')}
-  else{const j=await api('/lib/catalog?'+(q?'q='+encodeURIComponent(q):'shelf='+encodeURIComponent(st.shelf)));if(tok!==homeTok)return;j.books.forEach(b=>st.meta['g'+b.id]=st.meta['g'+b.id]||{t:b.title,id:b.id});h=j.books.map(tileHtml).join('')}
-  g.innerHTML=locHtml+h||'<p>No items found.</p>'}
- catch(e){if(tok===homeTok)g.innerHTML=locHtml+'<p>Could not load books right now. Please try again.</p>'}}
+  if(st.ges1!=null&&st.shelf==='GES SHS Year 1 Books'&&GES1[st.ges1]){const G=GES1[st.ges1];g.innerHTML=`<p style="grid-column:1/-1"><button onclick="st.ges1=null;renderHome()">← All Year 1 subjects</button> <b>${G[0]}</b></p>`+G[1].map((p,i)=>`<a class="tile" href="${GES_BASE+p}" target="_blank" rel="noopener" onclick="markPdf('${GES_BASE+p}','${G[0]} – Section ${i+1}')" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">📗</div><div class="t">Section ${i+1}<small>${G[0]} – Year 1<br>Opens on Ministry site ↗</small></div></a>`).join('');return}
+  g.innerHTML=`<p style="grid-column:1/-1">${L.note}</p>`+L.items.filter(l=>!q||l[0].toLowerCase().includes(q)).map(l=>l[1].startsWith('ges1:')?`<div class="tile" onclick="st.ges1=${+l[1].slice(5)};renderHome();window.scrollTo(0,0)"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Choose a section ›</small></div></div>`:l[1].startsWith(GES_BASE)&&l[1].endsWith('.pdf')?`<a class="tile" href="${l[1]}" target="_blank" rel="noopener" onclick="markPdf('${l[1]}','${l[0].replace(/'/g,'')}')" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Opens on Ministry site ↗</small></div></a>`:`<a class="tile" href="${l[1]}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Opens in a new tab ↗</small></div></a>`).join('');return}
+ if(st.shelf==='Open Library'){const url='https://openlibrary.org/search?q='+encodeURIComponent(q|| (isAdult()?'fiction':'juvenile fiction'));
+  g.innerHTML=`<p>Search books on Open Library. Results open on their website.</p><a class="tile" href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f0ff">📚</div><div class="t">Browse Open Library<small>${q?esc(q):'Book discovery'}<br>Opens in a new tab ↗</small></div></a>`;return}
+ const groups=BOOK_SHELVES[st.role]||{}, candidates=q?Object.values(groups).flat():groups[st.shelf]||[];
+ const books=candidates.filter(([id,title,author])=>(title+' '+author).toLowerCase().includes(q)).map(([id,title,author])=>({id,title,author}));
+ const searchUrl='https://www.gutenberg.org/ebooks/search/?query='+encodeURIComponent(q);
+ const searchCard=q?`<a class="tile" href="${searchUrl}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#fff3cd">🔎</div><div class="t">More results for “${esc(st.q.trim())}”<small>Search Project Gutenberg ↗</small></div></a>`:'';
+ g.innerHTML=locHtml+books.map(tileHtml).join('')+searchCard||'<p>No items found.</p>'}
 let sTimer;$('#q').oninput=e=>{st.q=e.target.value;clearTimeout(sTimer);sTimer=setTimeout(renderHome,st.q.trim()?450:0)};
 
-function openBook(id){const b=LIB.find(x=>x.id==id);st.cur=b;st.read[id]=1;save();track(true);show('reader');
- $('#pager').classList.add('hide');$('#quizbtn').classList.remove('hide');$('#askbtn').classList.add('hide');
+function openBook(id){const b=LIB.find(x=>x.id==id);st.cur=b;st.read[id]=1;save();show('reader');
+ $('#pager').classList.add('hide');$('#quizbtn').classList.remove('hide');$('#askbtn').classList.remove('hide');
  $('#rt').innerHTML=b.e+' '+b.t+` <button onclick="fav(${id})" id="fb">${st.fav.has(id)?'❤️':'🤍'}</button>`;
  $('#rb').innerHTML=paras(b.txt);
  $('#quiz').innerHTML='';$('#wordbox').textContent='';window.scrollTo(0,0)}
 function paras(ps,off=0){return ps.map((p,i)=>`<p id="p${off+i}">`+esc(p).split(' ').map(w=>`<span class="word" onclick="wd(this)">${w}</span>`).join(' ')+'</p>').join('')}
-async function openRemote(n){const id='g'+n;show('reader');stopRead();$('#rt').textContent='⏳ Opening book…';$('#rb').innerHTML='';$('#pager').classList.add('hide');$('#quiz').innerHTML='';$('#wordbox').textContent='';
- try{const j=await api('/lib/text?id='+n);
-  st.cur={id,t:j.title,e:'📖',age:'6-12',remote:true,all:j.paragraphs,page:Math.min((st.meta[id]&&st.meta[id].page)||0,Math.max(0,j.paragraphs.length-1)),txt:[]};
-  st.meta[id]={t:j.title,id:n,page:st.cur.page};st.read[id]=1;save();track(true);
-  $('#quizbtn').classList.add('hide');$('#askbtn').classList.remove('hide');
-  $('#rt').innerHTML=`📖 ${esc(j.title)} <small>by ${esc(j.author||'')}</small> <button onclick="fav('${id}')" id="fb">${st.fav.has(id)?'❤️':'🤍'}</button>`;
-  drawPage()}
- catch(e){$('#rt').textContent='Sorry, this book could not be opened right now.'}}
-// Continuous scrolling: paragraphs render in chunks as the reader nears the bottom; c.page is the first visible paragraph.
-const CHUNK=40;let moreIO=null,scrT=0;
-function loadMore(){const c=st.cur;if(!c||!c.all||c.shown>=c.all.length)return false;const to=Math.min(c.all.length,c.shown+CHUNK);
- $('#rb').insertAdjacentHTML('beforeend',paras(c.all.slice(c.shown,to),c.shown));c.shown=to;return true}
-function firstVisible(){const c=st.cur;for(let i=0;i<c.shown;i++){const p=document.getElementById('p'+i);if(p&&p.getBoundingClientRect().bottom>80)return i}return c.page}
-function updateProgress(){const c=st.cur;if(!c||!c.all||$('#v-reader').classList.contains('hide'))return;
- c.page=firstVisible();c.txt=c.all.slice(c.page,c.page+PAGE);
- $('#pgno').textContent=Math.round((c.page+1)/c.all.length*100)+'% read';
- st.meta[c.id].page=c.page;save()}
-function drawPage(){const c=st.cur;c.shown=0;$('#rb').innerHTML='';
- do loadMore();while(c.shown<c.page+CHUNK&&c.shown<c.all.length);
- $('#pager').classList.remove('hide');hist.length=0;
- if(moreIO)moreIO.disconnect();
- let s=document.getElementById('more');if(!s){s=document.createElement('div');s.id='more';s.style.height='1px';$('#rb').after(s)}
- moreIO=new IntersectionObserver(es=>{if(es[0].isIntersecting)loadMore()},{rootMargin:'1200px'});moreIO.observe(s);
- const p=document.getElementById('p'+c.page);window.scrollTo(0,0);if(p&&c.page>0)p.scrollIntoView();
- updateProgress()}
-addEventListener('scroll',()=>{clearTimeout(scrT);scrT=setTimeout(updateProgress,400)},{passive:true});
-function fav(id){st.fav.has(id)?st.fav.delete(id):st.fav.add(id);save();$('#fb').textContent=st.fav.has(id)?'❤️':'🤍'}
+function fav(id){st.fav.has(id)?st.fav.delete(id):st.fav.add(id);save();const fb=$('#fb');if(fb)fb.textContent=st.fav.has(id)?'❤️':'🤍';renderHome();if(!$('#v-me').classList.contains('hide'))renderMe()}
 function say(t,onend){if(!('speechSynthesis' in window)){if(onend)setTimeout(onend,1200);return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-GB';u.rate=.85;if(onend)u.onend=onend;speechSynthesis.speak(u)}
 let reading=0;
-function readAloud(){const c=st.cur,ps=c.all||c.txt,tok=++reading;let i=c.all?firstVisible():0;const next=()=>{if(tok!==reading)return;document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'));if(i>=ps.length)return;if(c.all&&i>=c.shown-3)loadMore();const el=$('#p'+i);el.classList.add('hl');if(c.all)el.scrollIntoView({block:'center',behavior:'smooth'});say(ps[i],()=>{i++;next()})};next()}
+function readAloud(){const ps=st.cur.txt,tok=++reading;let i=0;const next=()=>{if(tok!==reading)return;document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'));if(i>=ps.length)return;const el=$('#p'+i);el.classList.add('hl');say(ps[i],()=>{i++;next()})};next()}
 function stopRead(){reading++;if('speechSynthesis' in window)speechSynthesis.cancel();document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'))}
 function wd(el){const w=el.textContent.replace(/[^\w']/g,'').toLowerCase();stopRead();say(w);if(w)askWord(w)}
 function startQuiz(){stopRead();const qs=st.cur.q;let i=0,sc=0;const box=$('#quiz');
  window.ans=(j,a)=>{if(j===a){sc++;say('Well done!')}else say('Nice try!');i++;go()};
  const go=()=>{if(i>=qs.length){box.innerHTML=`<div class="card"><h3>🎉 You got ${sc}/${qs.length}!</h3></div>`;st.stars+=sc;badge('Finished: '+st.cur.t);if(sc===qs.length)badge('Quiz Star ⭐');return}
   const [q,o,a]=qs[i];box.innerHTML=`<div class="card"><h3>${q}</h3>`+o.map((x,j)=>`<button style="margin:4px" onclick="ans(${j},${a})">${x}</button>`).join('')+'</div>'};go()}
-/* ===== In-app PDF reader (pdf.js; pages stream from the Ministry site via the API, loaded and drawn on demand) ===== */
-let pdfDoc=null,pdfIO=null,pdfZ=1,pdfKey='',pdfTitle='',pdfUrl='',pdfSave=0;
-const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
-function closePdf(){if(pdfIO){pdfIO.disconnect();pdfIO=null}if(pdfDoc){pdfDoc.destroy();pdfDoc=null}$('#pdfbody').innerHTML='';show('home')}
-async function openPdf(url,title){pdfUrl=url;pdfTitle=title;pdfKey='pdf:'+url.slice(GES_BASE.length);pdfZ=1;
- show('pdf');$('#pdft').textContent=title;$('#pdfpg').textContent='';$('#pdfbody').innerHTML='<p>⏳ Opening book…</p>';window.scrollTo(0,0);
- st.meta[pdfKey]=st.meta[pdfKey]||{t:title,url,page:1};st.read[pdfKey]=1;save();track(true);
- try{if(!window.pdfjsLib){await loadScript('js/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc='js/pdf.worker.min.js'}
-  if(pdfDoc){pdfDoc.destroy();pdfDoc=null}
-  pdfDoc=await pdfjsLib.getDocument({url:BASE+'/lib/pdf?p='+encodeURIComponent(url.slice(GES_BASE.length)),httpHeaders:{Authorization:'Bearer '+token},rangeChunkSize:1<<20,disableAutoFetch:true,disableStream:true}).promise;
-  await pdfLayout(st.meta[pdfKey].page||1)}
- catch(e){$('#pdfbody').innerHTML='<p>Sorry, this book could not be opened right now. Please check your internet and try again.</p>'}}
-async function pdfLayout(goto){const box=$('#pdfbody'),doc=pdfDoc;if(!doc)return;
- const p1=await doc.getPage(1),v1=p1.getViewport({scale:1}),w=Math.min(box.clientWidth-16,1100)*pdfZ,sc=w/v1.width,h=v1.height*sc;
- if(pdfIO)pdfIO.disconnect();box.innerHTML='';
- pdfIO=new IntersectionObserver(es=>es.forEach(en=>{const d=en.target;if(en.isIntersecting)pdfDraw(d,sc);else if(d.dataset.done){d.innerHTML='';delete d.dataset.done}}),{rootMargin:'1500px 0px'});
- for(let i=1;i<=doc.numPages;i++){const d=document.createElement('div');d.className='pgbox';d.dataset.n=i;d.style.width=w+'px';d.style.height=h+'px';box.appendChild(d);pdfIO.observe(d)}
- pdfInfo();const t=box.children[Math.min(Math.max(goto||1,1),doc.numPages)-1];if(t)t.scrollIntoView()}
-async function pdfDraw(d,sc){if(d.dataset.done||d.dataset.busy||!pdfDoc)return;d.dataset.busy=1;const doc=pdfDoc;
- try{const pg=await doc.getPage(+d.dataset.n),vp=pg.getViewport({scale:sc}),o=Math.min(window.devicePixelRatio||1,2),c=document.createElement('canvas');
-  c.width=Math.floor(vp.width*o);c.height=Math.floor(vp.height*o);d.style.height=vp.height+'px';
-  await pg.render({canvasContext:c.getContext('2d'),viewport:vp,transform:o!==1?[o,0,0,o,0,0]:null}).promise;
-  if(doc===pdfDoc){d.innerHTML='';d.appendChild(c);d.dataset.done=1}}catch(e){}
- delete d.dataset.busy}
-function pdfCur(){const b=$('#pdfbody');for(const d of b.children){if(d.getBoundingClientRect().bottom>140)return +d.dataset.n}return pdfDoc?pdfDoc.numPages:1}
-function pdfInfo(){if(pdfDoc)$('#pdfpg').textContent='Page '+pdfCur()+' / '+pdfDoc.numPages}
-function pdfZoom(d){if(!pdfDoc)return;const cur=pdfCur();pdfZ=Math.min(3,Math.max(.6,+(pdfZ+d).toFixed(1)));pdfLayout(cur)}
-function pdfJump(){if(!pdfDoc)return;const n=parseInt(prompt('Go to page (1–'+pdfDoc.numPages+')',pdfCur()),10);if(n>=1&&n<=pdfDoc.numPages)$('#pdfbody').children[n-1].scrollIntoView()}
-addEventListener('scroll',()=>{if(!pdfDoc||$('#v-pdf').classList.contains('hide'))return;pdfInfo();clearTimeout(pdfSave);pdfSave=setTimeout(()=>{if(st.meta[pdfKey]){st.meta[pdfKey].page=pdfCur();save()}},600)},{passive:true});
-function badge(n){st.badges.add(n);save();track(false)}
+function markPdf(url,title){const key='pdf:'+url;st.read[key]=1;st.meta[key]={t:title,url};save()}
+function openPdf(url,title){markPdf(url,title);window.open(url,'_blank','noopener')}
+function badge(n){st.badges.add(n);save()}
 
 const KB=[[/ananse|spider/,"Ananse is the clever spider in Akan stories. In our library story he learns that wisdom belongs to everybody! 🕷️"],
 [/wisdom/,"Wisdom means knowing what is right and using what you learn well. Ananse tried to keep it all for himself!"],
@@ -456,13 +360,9 @@ const KB=[[/ananse|spider/,"Ananse is the clever spider in Akan stories. In our 
 const BAD=/\b(guns?|pistols?|bombs?|weapons?|kill\w*|sex\w*|drugs?|hate|murder|suicide|porn\w*)\b|address|phone number|meet me/;
 function bot(t,c){const d=document.createElement('div');d.className='msg bot '+(c||'');d.textContent=t;$('#chat').appendChild(d);$('#chat').scrollTop=1e5}
 const hist=[];
-function offline(t){const l=t.toLowerCase();if(isAdult())return["The AI assistant is unavailable right now. Please try again shortly, or browse the shelves in the Library tab. 📚",false];if(BAD.test(l))return["That's not something I can talk about. I've asked the librarian to come and help you. 💛",true]
- const k=KB.find(([r])=>r.test(l));return[k?k[1]:"I can't reach my big brain right now, but try the Library tab to search. 🔍",false]}
-async function aiAsk(t){hist.push({role:'user',content:t});
- const book=st.cur?{title:st.cur.t,text:st.cur.txt.join(' ')}:null;
- try{const j=await api('/buddy',{method:'POST',body:JSON.stringify({messages:hist,age:st.cur?st.cur.age:'6-12',book})});
-  if(!j.reply)throw 0;hist.push({role:'assistant',content:j.reply});return[j.reply,!!j.flagged]}
- catch(e){hist.pop();return e.status===429?[e.message,false]:offline(t)}}
+function offline(t){const l=t.toLowerCase();if(BAD.test(l))return["I can't help with that topic. Please speak with a trusted adult.",false]
+ const k=KB.find(([r])=>r.test(l));return[k?k[1]:"I only know a few pre-written answers. Try the Library tab to browse books. 🔍",false]}
+async function aiAsk(t){const result=offline(t);hist.push({role:'user',content:t},{role:'assistant',content:result[0]});return result}
 async function ask(v){const i=$('#ci');const t=(v||i.value).trim();if(!t)return;i.value='';const m=document.createElement('div');m.className='msg me';m.textContent=t;$('#chat').appendChild(m);
  const th=document.createElement('div');th.className='msg bot';th.textContent='Kofi is thinking… 🦉';$('#chat').appendChild(th);$('#chat').scrollTop=1e5;
  const[rep,fl]=await aiAsk(t);th.textContent=rep;if(fl)th.classList.add('flag');$('#chat').scrollTop=1e5}
@@ -525,32 +425,9 @@ function proverb(){const[p,a,o]=pickUnique('p',PROVERBS);
 
 function renderMe(){$('#mekp').innerHTML=`<div class="kpi"><b>${Object.keys(st.read).length}</b>Items opened</div><div class="kpi"><b>${st.stars}</b>⭐ Stars</div><div class="kpi"><b>${st.badges.size}</b>Badges</div>`;
  $('#badges').innerHTML=[...st.badges].map(b=>`<span class="badge">🏅 ${b}</span>`).join('')||'Finish a quiz or game to earn badges!';
- $('#favs').innerHTML=[...st.fav].map(i=>{if(String(i).startsWith('g')){const m=st.meta[i];return m?`<div class="tile" onclick="openRemote(${m.id})"><div class="cover" style="background:${COV[m.id%6]}">📖</div><div class="t">${esc(m.t)}</div></div>`:''}const b=LIB.find(x=>x.id===i);return b?`<div class="tile" onclick="openBook(${i})"><div class="cover" style="background:${COV[i%6]}">${b.e}</div><div class="t">${b.t}</div></div>`:''}).join('')||'<p>Tap 🤍 inside a book to save favourites.</p>'}
+ $('#favs').innerHTML=[...st.fav].map(i=>{if(String(i).startsWith('g')){const m=st.meta[i];return m?`<div class="tile" onclick="openGutenberg(${m.id})"><div class="cover" style="background:${COV[m.id%6]}">📖</div><div class="t">${esc(m.t)}<small>Read at Project Gutenberg ↗</small></div></div>`:''}const b=LIB.find(x=>x.id===i);return b?`<div class="tile" onclick="openBook(${i})"><div class="cover" style="background:${COV[i%6]}">${b.e}</div><div class="t">${b.t}</div></div>`:''}).join('')||'<p>Tap 🤍 inside a book to save favourites.</p>'}
 
-let adminPass='';
-async function admin(body){return api('/lib/admin',{method:'POST',admin:true,headers:{'x-admin-pass':adminPass},body:JSON.stringify(body)})}
-async function staffIn(){adminPass=$('#spin').value;$('#aerr').textContent='';
- try{await admin({op:'list'});$('#staffgate').classList.add('hide');$('#staffbody').classList.remove('hide');renderStaff()}
- catch(e){adminPass='';$('#aerr').textContent=e.status===401?'Wrong passcode':e.message}}
-function staffOut(){adminPass='';$('#spin').value='';$('#staffbody').classList.add('hide');$('#staffgate').classList.remove('hide')}
-async function mkCode(){const name=$('#nname').value.trim(),type=$('#ntype').value;if(!name)return;
- try{const j=await admin({op:'create',name,type});$('#nname').value='';$('#newcode').innerHTML=`New ${j.type==='adult'?'🧑 adult':'👧 kids'} code for <b>${esc(j.name)}</b>: <b style="font-size:1.8em;letter-spacing:6px">${j.code}</b> — give it to the member.`;renderStaff()}catch(e){$('#newcode').textContent=e.message}}
-async function codeOp(op,code){if(op==='delete'&&!confirm('Delete code '+code+'?'))return;await admin({op,code});renderStaff()}
-async function reviewAlert(id){await admin({op:'review',id});renderStaff()}
-async function renderStaff(){if($('#staffbody').classList.contains('hide'))return;
- try{const j=await admin({op:'list'});
-  const act=j.codes.filter(c=>c.active).length,newA=j.alerts.filter(a=>!a.reviewed).length;
-  const dur=s=>{s=Math.round(s||0);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+'h '+m+'m':m?m+'m':(s?'<1m':'0m')};
-  $('#akpi').innerHTML=`<div class="kpi"><b>${act}</b>Active codes</div><div class="kpi"><b>${j.codes.reduce((s,c)=>s+c.reads,0)}</b>Books opened</div><div class="kpi"><b>${j.codes.reduce((s,c)=>s+c.sessions,0)}</b>Sign-ins</div><div class="kpi" style="background:var(--r)"><b>${newA}</b>Safety alerts</div><div class="kpi"><b>${j.codes.filter(c=>c.online).length}</b>🟢 Online now</div><div class="kpi"><b>${dur(j.codes.reduce((s,c)=>s+c.totalSecs,0))}</b>Total time</div>`;
-  const d=s=>s?new Date(s).toLocaleString([], {dateStyle:'short',timeStyle:'short'}):'—';
-  $('#codes').innerHTML='<tr><th>Code</th><th>Member</th><th>Library</th><th>Status</th><th>Online</th><th>This session</th><th>Total time</th><th>Last seen</th><th>Sign-ins</th><th>Books</th><th>⭐</th><th></th></tr>'+(j.codes.map(c=>`<tr><td><b>${c.code}</b></td><td>${esc(c.name)}</td><td>${c.type==='adult'?'🧑 Adult':'👧 Kids'}</td><td>${c.active?'✅ Active':'⛔ Revoked'}</td><td>${c.online?'🟢 Online':'⚪ Offline'}</td><td>${c.online?dur(c.sessionSecs):'—'}</td><td>${dur(c.totalSecs)}</td><td>${d(c.lastSeen)}</td><td>${c.sessions}</td><td>${c.reads}</td><td>${c.stars}</td><td>${c.active?`<button onclick="codeOp('revoke','${c.code}')">Revoke</button>`:`<button onclick="codeOp('restore','${c.code}')">Restore</button>`} <button style="background:#eee" onclick="codeOp('delete','${c.code}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="12">No codes yet. Create one above.</td></tr>');
-  $('#alerts').innerHTML='<tr><th>Time</th><th>Learner</th><th>Question</th><th>Status</th></tr>'+(j.alerts.map(a=>`<tr><td>${d(a.time)}</td><td>${esc(a.name)}</td><td>${esc(a.text)}</td><td>${a.reviewed?'Reviewed':`<button onclick="reviewAlert('${a.id}')">Mark reviewed</button>`}</td></tr>`).join('')||'<tr><td colspan="4">No flagged conversations.</td></tr>')}
- catch(e){if(e.status===401)staffOut()}}
-
-drawPad();
 if(!navigator.onLine)$('#offb').classList.remove('hide');
-setInterval(()=>{if(adminPass&&document.visibilityState==='visible')renderStaff()},30000);
-resume();
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 let dip=null;

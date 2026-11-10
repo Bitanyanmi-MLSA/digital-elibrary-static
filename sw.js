@@ -1,5 +1,13 @@
-const CACHE = 'elibrary-v10';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'elibrary-static-v1';
+const SHELL = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './js/ges1.js',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/maskable-512.png'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -11,8 +19,7 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-// Network-first for the app shell (always fresh when online), cache fallback offline.
-// Cross-origin requests (the AI API) are never cached.
+// Network-first for the app shell, with a cached fallback when offline.
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
