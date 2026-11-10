@@ -142,6 +142,15 @@ td,th{padding:8px;border-bottom:1px solid #0002;text-align:left}
   </div>
 </section>
 
+<section id="v-webreader" class="hide">
+  <div class="card">
+    <div class="sp"><button onclick="closeWebReader()">← Back to library</button><h2 id="webtitle" style="flex:1"></h2></div>
+    <p id="webnote">Content is displayed from its original source inside the app.</p>
+    <iframe id="webframe" title="Book reader" style="width:100%;height:78vh;border:1px solid #0002;border-radius:10px" referrerpolicy="no-referrer"></iframe>
+    <p><a id="websource" target="_blank" rel="noopener">If it doesn't display here, open the source in a new tab.</a></p>
+  </div>
+</section>
+
 <section id="v-buddy" class="hide">
   <div class="card">
     <h2>🦉 Kofi's Offline Reading Helper</h2>
@@ -297,14 +306,36 @@ function applyRole(role){st.role=role==='adult'?'adult':'kids';const a=isAdult()
  $('#chat').innerHTML='';hist.length=0;
  $('#sugg').innerHTML='';(a?SUGG_ADULT:SUGG_KIDS).forEach(l=>{const c=document.createElement('span');c.className='chip';c.textContent=l;c.onclick=()=>ask(l);$('#sugg').appendChild(c)})}
 function enter(n,role){applyRole(role);restore();st.user=n;$('#who').textContent=isAdult()?'– Adult Library':'– Kids Library 👋';$('#hdr').classList.remove('hide');startTimer();show('home')}
-function logout(){stopRead();hist.length=0;st.user=null;st.cur=null;$('#hdr').classList.add('hide');$('#chat').innerHTML='';clearInterval(tm);show('login')}
+function logout(){stopRead();hist.length=0;st.user=null;st.cur=null;$('#webframe').src='about:blank';$('#hdr').classList.add('hide');$('#chat').innerHTML='';clearInterval(tm);show('login')}
 let tm,secs=900;function startTimer(){secs=900;clearInterval(tm);if(isAdult())return;tm=setInterval(()=>{secs--;const t=$('#timer');if(t)t.textContent=Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');if(secs<=0){clearInterval(tm);alert('Time for a reading break! 📖')}},1000)}
 
 function chips(el,arr,key){el.innerHTML='';arr.forEach(a=>{const c=document.createElement('span');c.className='chip'+(st[key]===a?' on':'');c.textContent=a;c.onclick=()=>{st[key]=a;renderHome()};el.appendChild(c)})}
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function openGutenberg(id){const book=Object.values(BOOK_SHELVES[st.role]||{}).flat().find(b=>b[0]===id);const title=book?book[1]:'Project Gutenberg book';const rid='g'+id;st.read[rid]=1;st.meta[rid]={t:title,id};save();window.open('https://www.gutenberg.org/ebooks/'+id,'_blank','noopener')}
+const BOOK_TEXT_IDS=new Set(Object.values(BOOK_SHELVES.adult).flat().map(([id])=>id).filter(id=>![33283,13309,21154,32973,21076].includes(id)));
+const BOOK_PDF_URLS={33283:'https://www.gutenberg.org/files/33283/33283-pdf.pdf',13309:'https://www.gutenberg.org/files/13309/13309-pdf.pdf',32973:'https://www.gutenberg.org/files/32973/32973-pdf.pdf',21076:'https://www.gutenberg.org/files/21076/21076-pdf.pdf'};
+function openGutenberg(id){const book=Object.values(BOOK_SHELVES[st.role]||{}).flat().find(b=>b[0]===id);const title=book?book[1]:'Project Gutenberg book';
+ if(id===21154)return openAudiobook(id,title);
+ if(!isAdult())return openWeb('https://www.gutenberg.org/ebooks/'+id,title);
+ if(BOOK_PDF_URLS[id])return openPdf(BOOK_PDF_URLS[id],title);
+ if(!BOOK_TEXT_IDS.has(id))return openWeb('https://www.gutenberg.org/ebooks/'+id,title);
+ const rid='g'+id;stopRead();show('reader');$('#rt').textContent='📖 '+title;$('#rb').textContent='Loading book…';
+ $('#pager').classList.add('hide');$('#quizbtn').classList.add('hide');$('#askbtn').classList.remove('hide');$('#quiz').innerHTML='';$('#wordbox').textContent='';
+ fetch('books/'+id+'.txt').then(response=>{if(!response.ok)throw new Error('Book text could not be loaded.');return response.text()}).then(raw=>{
+  const start=raw.match(/^\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG[^\r\n]*\r?\n/im);
+  const end=/^\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG[^\r\n]*/im.exec(raw);
+  if(!start||!end||end.index<=start.index)throw new Error('The bundled text is incomplete.');
+  const content=raw.slice(start.index+start[0].length,end.index);
+  const paragraphs=content.replace(/\r/g,'').split(/\n\s*\n/).map(p=>p.replace(/\s*\n\s*/g,' ').trim()).filter(p=>p.length>1);
+  if(!paragraphs.length)throw new Error('The bundled text is empty.');
+  const license=(raw.slice(0,start.index)+'\n'+raw.slice(end.index)).trim();
+  st.cur={id:rid,t:title,e:'📖',age:'adult',all:paragraphs,page:st.meta[rid]?.page||0,shown:0,txt:[],license};
+  st.read[rid]=1;st.meta[rid]={t:title,id,page:st.cur.page};save();
+  $('#rt').innerHTML=`📖 ${esc(title)} <small>by ${esc(book?.[2]||'')}</small> <button onclick="fav('${rid}')" id="fb">${st.fav.has(rid)?'❤️':'🤍'}</button>`;
+  drawLongBook();
+ }).catch(error=>{console.error(error);$('#rb').innerHTML=`<p>${esc(error.message||'This book could not be loaded.')}</p><a href="https://www.gutenberg.org/ebooks/${id}" target="_blank" rel="noopener">Open Project Gutenberg source</a>`});
+}
 function tileHtml(b){const rid='g'+b.id,cover='https://www.gutenberg.org/cache/epub/'+b.id+'/pg'+b.id+'.cover.medium.jpg';
- return `<div class="tile"><div onclick="openGutenberg(${b.id})"><div class="cover" style="background:${COV[b.id%6]}"><img src="${cover}" alt="" loading="lazy" style="max-height:130px;max-width:100%" onerror="this.replaceWith('📖')"></div><div class="t">${st.fav.has(rid)?'❤️ ':''}${esc(b.title)}<small>${esc(b.author)}<br>Read at Project Gutenberg ↗</small></div></div><button style="margin:0 10px 10px" onclick="fav('${rid}')">${st.fav.has(rid)?'❤️ Saved':'🤍 Save'}</button></div>`}
+ return `<div class="tile"><div onclick="openGutenberg(${b.id})"><div class="cover" style="background:${COV[b.id%6]}"><img src="${cover}" alt="" loading="lazy" style="max-height:130px;max-width:100%" onerror="this.replaceWith('📖')"></div><div class="t">${st.fav.has(rid)?'❤️ ':''}${esc(b.title)}<small>${esc(b.author)}<br>Read in the app 📖</small></div></div><button style="margin:0 10px 10px" onclick="fav('${rid}')">${st.fav.has(rid)?'❤️ Saved':'🤍 Save'}</button></div>`}
 function recent(){const ks=Object.keys(st.read),last=ks[ks.length-1];if(!last)return '<b>👋 Pick a story to start your first reading mission!</b>';
  if(last.startsWith('pdf:')){const m=st.meta[last];return m?`<b>▶ Continue reading:</b> ${esc(m.t)} <button onclick="openPdf('${m.url}','${m.t.replace(/'/g,'')}')">Continue</button>`:'<b>👋 Pick a book to start!</b>'}
  const m=last.startsWith('g')?st.meta[last]:LIB.find(x=>x.id==last);if(!m)return '<b>👋 Pick a story to start!</b>';
@@ -319,35 +350,60 @@ function renderHome(){chips($('#shelves'),SHELVES,'shelf');
  const g=$('#grid');
  if(!isAdult()&&st.shelf==='Starter Stories'&&!q){g.innerHTML=locHtml||'<p>No items found.</p>';return}
  if(isAdult()&&LINK_SHELVES[st.shelf]){const L=LINK_SHELVES[st.shelf];
-  if(st.ges1!=null&&st.shelf==='GES SHS Year 1 Books'&&GES1[st.ges1]){const G=GES1[st.ges1];g.innerHTML=`<p style="grid-column:1/-1"><button onclick="st.ges1=null;renderHome()">← All Year 1 subjects</button> <b>${G[0]}</b></p>`+G[1].map((p,i)=>`<a class="tile" href="${GES_BASE+p}" target="_blank" rel="noopener" onclick="markPdf('${GES_BASE+p}','${G[0]} – Section ${i+1}')" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">📗</div><div class="t">Section ${i+1}<small>${G[0]} – Year 1<br>Opens on Ministry site ↗</small></div></a>`).join('');return}
-  g.innerHTML=`<p style="grid-column:1/-1">${L.note}</p>`+L.items.filter(l=>!q||l[0].toLowerCase().includes(q)).map(l=>l[1].startsWith('ges1:')?`<div class="tile" onclick="st.ges1=${+l[1].slice(5)};renderHome();window.scrollTo(0,0)"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Choose a section ›</small></div></div>`:l[1].startsWith(GES_BASE)&&l[1].endsWith('.pdf')?`<a class="tile" href="${l[1]}" target="_blank" rel="noopener" onclick="markPdf('${l[1]}','${l[0].replace(/'/g,'')}')" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Opens on Ministry site ↗</small></div></a>`:`<a class="tile" href="${l[1]}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Opens in a new tab ↗</small></div></a>`).join('');return}
+  if(st.ges1!=null&&st.shelf==='GES SHS Year 1 Books'&&GES1[st.ges1]){const G=GES1[st.ges1];g.innerHTML=`<p style="grid-column:1/-1"><button onclick="st.ges1=null;renderHome()">← All Year 1 subjects</button> <b>${G[0]}</b></p>`+G[1].map((p,i)=>`<div class="tile" onclick="openPdf('${GES_BASE+p}','${G[0]} – Section ${i+1}')"><div class="cover" style="background:#e8f5ec">📗</div><div class="t">Section ${i+1}<small>${G[0]} – Year 1<br>Read in the app 📖</small></div></div>`).join('');return}
+  g.innerHTML=`<p style="grid-column:1/-1">${L.note}</p>`+L.items.filter(l=>!q||l[0].toLowerCase().includes(q)).map(l=>l[1].startsWith('ges1:')?`<div class="tile" onclick="st.ges1=${+l[1].slice(5)};renderHome();window.scrollTo(0,0)"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Choose a section ›</small></div></div>`:l[1].startsWith(GES_BASE)&&l[1].endsWith('.pdf')?`<div class="tile" onclick="openPdf('${l[1]}','${l[0].replace(/'/g,'')}')"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>Read in the app 📖</small></div></div>`:`<div class="tile" onclick="openWeb('${l[1]}','${l[0]}')"><div class="cover" style="background:#e8f5ec">${l[2]}</div><div class="t">${l[0]}<small>${l[3]}<br>View in the app ↗</small></div></div>`).join('');return}
  if(st.shelf==='Open Library'){const url='https://openlibrary.org/search?q='+encodeURIComponent(q|| (isAdult()?'fiction':'juvenile fiction'));
-  g.innerHTML=`<p>Search books on Open Library. Results open on their website.</p><a class="tile" href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f0ff">📚</div><div class="t">Browse Open Library<small>${q?esc(q):'Book discovery'}<br>Opens in a new tab ↗</small></div></a>`;return}
+  g.innerHTML=`<p>Browse Open Library inside the app. Books and availability are managed by Open Library.</p><a class="tile" href="${url}" onclick="openWeb(this.href,'Open Library');return false" style="text-decoration:none;color:inherit"><div class="cover" style="background:#e8f0ff">📚</div><div class="t">Browse Open Library<small>${q?esc(q):'Book discovery'}<br>Open in the app ↗</small></div></a>`;return}
  const groups=BOOK_SHELVES[st.role]||{}, candidates=q?Object.values(groups).flat():groups[st.shelf]||[];
  const books=candidates.filter(([id,title,author])=>(title+' '+author).toLowerCase().includes(q)).map(([id,title,author])=>({id,title,author}));
  const searchUrl='https://www.gutenberg.org/ebooks/search/?query='+encodeURIComponent(q);
- const searchCard=q?`<a class="tile" href="${searchUrl}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="cover" style="background:#fff3cd">🔎</div><div class="t">More results for “${esc(st.q.trim())}”<small>Search Project Gutenberg ↗</small></div></a>`:'';
+ const searchCard=q?`<a class="tile" href="${searchUrl}" onclick="openWeb(this.href,'Project Gutenberg search');return false" style="text-decoration:none;color:inherit"><div class="cover" style="background:#fff3cd">🔎</div><div class="t">More results for “${esc(st.q.trim())}”<small>Search Project Gutenberg in the app ↗</small></div></a>`:'';
  g.innerHTML=locHtml+books.map(tileHtml).join('')+searchCard||'<p>No items found.</p>'}
 let sTimer;$('#q').oninput=e=>{st.q=e.target.value;clearTimeout(sTimer);sTimer=setTimeout(renderHome,st.q.trim()?450:0)};
 
-function openBook(id){const b=LIB.find(x=>x.id==id);st.cur=b;st.read[id]=1;save();show('reader');
+function openBook(id){const b=LIB.find(x=>x.id==id);stopRead();st.cur=b;st.read[id]=1;save();show('reader');
  $('#pager').classList.add('hide');$('#quizbtn').classList.remove('hide');$('#askbtn').classList.remove('hide');
  $('#rt').innerHTML=b.e+' '+b.t+` <button onclick="fav(${id})" id="fb">${st.fav.has(id)?'❤️':'🤍'}</button>`;
  $('#rb').innerHTML=paras(b.txt);
  $('#quiz').innerHTML='';$('#wordbox').textContent='';window.scrollTo(0,0)}
 function paras(ps,off=0){return ps.map((p,i)=>`<p id="p${off+i}">`+esc(p).split(' ').map(w=>`<span class="word" onclick="wd(this)">${w}</span>`).join(' ')+'</p>').join('')}
+const BOOK_CHUNK=32;let bookObserver=null,bookSaveTimer=0;
+function loadMoreBook(){const c=st.cur;if(!c?.all||c.shown>=c.all.length)return false;
+ const to=Math.min(c.all.length,c.shown+BOOK_CHUNK),html=paras(c.all.slice(c.shown,to),c.shown),sentinel=$('#more');
+ if(sentinel)sentinel.insertAdjacentHTML('beforebegin',html);else $('#rb').insertAdjacentHTML('beforeend',html);
+ c.shown=to;
+ if(c.shown>=c.all.length&&c.license){const d=document.createElement('details');d.innerHTML='<summary>Project Gutenberg source and license notice</summary><pre></pre>';d.querySelector('pre').textContent=c.license;sentinel?sentinel.before(d):$('#rb').appendChild(d);c.license=''}
+ return true}
+function firstVisibleBook(){const c=st.cur;if(!c)return 0;for(let i=0;i<c.shown;i++){const p=document.getElementById('p'+i);if(p&&p.getBoundingClientRect().bottom>80)return i}return c.page||0}
+function updateBookProgress(){const c=st.cur;if(!c?.all||$('#v-reader').classList.contains('hide'))return;
+ c.page=firstVisibleBook();c.txt=c.all.slice(c.page,c.page+6);if(st.meta[c.id]){st.meta[c.id].page=c.page;save()}}
+function drawLongBook(){const c=st.cur;if(!c?.all)return;c.shown=0;$('#rb').innerHTML='<div id="more" style="height:1px"></div>';
+ while(c.shown<c.page+BOOK_CHUNK&&loadMoreBook()){}
+ if(bookObserver)bookObserver.disconnect();
+ bookObserver=new IntersectionObserver(entries=>{if(entries[0].isIntersecting)loadMoreBook()},{rootMargin:'1200px'});
+ bookObserver.observe($('#more'));window.scrollTo(0,0);
+ const p=document.getElementById('p'+c.page);if(p&&c.page>0)p.scrollIntoView();
+ updateBookProgress()}
+addEventListener('scroll',()=>{clearTimeout(bookSaveTimer);bookSaveTimer=setTimeout(updateBookProgress,400)},{passive:true});
 function fav(id){st.fav.has(id)?st.fav.delete(id):st.fav.add(id);save();const fb=$('#fb');if(fb)fb.textContent=st.fav.has(id)?'❤️':'🤍';renderHome();if(!$('#v-me').classList.contains('hide'))renderMe()}
 function say(t,onend){if(!('speechSynthesis' in window)){if(onend)setTimeout(onend,1200);return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-GB';u.rate=.85;if(onend)u.onend=onend;speechSynthesis.speak(u)}
 let reading=0;
-function readAloud(){const ps=st.cur.txt,tok=++reading;let i=0;const next=()=>{if(tok!==reading)return;document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'));if(i>=ps.length)return;const el=$('#p'+i);el.classList.add('hl');say(ps[i],()=>{i++;next()})};next()}
-function stopRead(){reading++;if('speechSynthesis' in window)speechSynthesis.cancel();document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'))}
+function readAloud(){const c=st.cur,ps=c.all||c.txt,tok=++reading;let i=c.all?firstVisibleBook():0;const next=()=>{if(tok!==reading)return;document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'));if(i>=ps.length)return;if(c.all&&i>=c.shown-3)loadMoreBook();const el=$('#p'+i);if(!el)return;el.classList.add('hl');el.scrollIntoView({block:'center',behavior:'smooth'});say(ps[i],()=>{i++;next()})};next()}
+function stopRead(){reading++;if(bookObserver)bookObserver.disconnect();if('speechSynthesis' in window)speechSynthesis.cancel();const audio=$('#audiochapterplayer');if(audio)audio.pause();document.querySelectorAll('.reader p').forEach(p=>p.classList.remove('hl'))}
 function wd(el){const w=el.textContent.replace(/[^\w']/g,'').toLowerCase();stopRead();say(w);if(w)askWord(w)}
 function startQuiz(){stopRead();const qs=st.cur.q;let i=0,sc=0;const box=$('#quiz');
  window.ans=(j,a)=>{if(j===a){sc++;say('Well done!')}else say('Nice try!');i++;go()};
  const go=()=>{if(i>=qs.length){box.innerHTML=`<div class="card"><h3>🎉 You got ${sc}/${qs.length}!</h3></div>`;st.stars+=sc;badge('Finished: '+st.cur.t);if(sc===qs.length)badge('Quiz Star ⭐');return}
   const [q,o,a]=qs[i];box.innerHTML=`<div class="card"><h3>${q}</h3>`+o.map((x,j)=>`<button style="margin:4px" onclick="ans(${j},${a})">${x}</button>`).join('')+'</div>'};go()}
 function markPdf(url,title){const key='pdf:'+url;st.read[key]=1;st.meta[key]={t:title,url};save()}
-function openPdf(url,title){markPdf(url,title);window.open(url,'_blank','noopener')}
+function openPdf(url,title){markPdf(url,title);openWeb(url,title,'Official PDF displayed by its publisher inside the app.')}
+function openWeb(url,title,note='Content is displayed from its original source inside the app.'){const frame=$('#webframe');$('#webtitle').textContent=title;$('#webnote').textContent=note;$('#websource').href=url;frame.src=url;show('webreader');window.scrollTo(0,0)}
+function closeWebReader(){$('#webframe').src='about:blank';show('home')}
+function openAudiobook(id,title){const rid='g'+id,base='https://www.gutenberg.org/files/21154/mp3/';st.read[rid]=1;st.meta[rid]={t:title,id};st.cur={id:rid,t:title,e:'🎧',age:'adult',txt:[],q:[]};save();stopRead();show('reader');
+ $('#rt').textContent='🎧 '+title;$('#quizbtn').classList.add('hide');$('#askbtn').classList.add('hide');$('#pager').classList.add('hide');$('#wordbox').textContent='';$('#quiz').innerHTML='';
+ $('#rb').innerHTML='<p>This Gutenberg edition is available as a free audiobook rather than a text file. Play it here without leaving the app.</p><label for="audiochapter">Chapter </label><select id="audiochapter"></select><audio id="audiochapterplayer" controls preload="none" style="display:block;width:100%;margin:12px 0"></audio><p>Audio: Project Gutenberg eBook 21154.</p>';
+ const select=$('#audiochapter'),player=$('#audiochapterplayer');for(let i=1;i<=18;i++){const option=document.createElement('option');option.value=base+'21154-'+String(i).padStart(2,'0')+'.mp3';option.textContent=String(i);select.appendChild(option)}
+ player.src=select.value;select.onchange=()=>{player.src=select.value;player.load()}}
 function badge(n){st.badges.add(n);save()}
 
 const KB=[[/ananse|spider/,"Ananse is the clever spider in Akan stories. In our library story he learns that wisdom belongs to everybody! 🕷️"],

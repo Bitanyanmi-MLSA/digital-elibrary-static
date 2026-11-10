@@ -5,16 +5,16 @@ A child-friendly digital library that runs as a static website and progressive w
 ## What works
 
 - Built-in stories, reading aloud, word meanings, quizzes, badges, and the Play Zone.
-- Curated Kids and Adult Project Gutenberg shelves. Selecting a book opens its public Gutenberg page in a new tab; the app does not download book text through a proxy.
-- Open Library discovery and official Ghana Ministry of Education / GES resources open directly on their respective websites.
+- Curated Adult Project Gutenberg texts are bundled with the site and read in the app, including the source and licence notice. A few editions available only as PDFs or audio are embedded in the reader.
+- Official Ghana Ministry of Education / GES PDFs and Open Library discovery are displayed inside the app from their original publishers; an external-source fallback is available if a publisher blocks embedding.
 - Reading progress, favourites, badges, and stars are stored in the current browser only.
-- Offline access to the app shell and built-in stories after the first visit.
+- Offline access to the app shell and built-in stories after the first visit. Adult texts are cached locally as they are opened.
 
 ## Important limitations
 
 The Kids and Adult choices are display modes, not protected accounts or age controls. Anyone can switch modes. Progress is neither private nor synced, and it may be lost when browser data is cleared. Kofi is a small, pre-written offline helper—not AI. Questions are not sent anywhere or monitored, and this static copy has no staff review or safety alert system. Please supervise children while they use the public site.
 
-External book and curriculum sites need an internet connection and may change or become unavailable.
+Embedded Ministry, Open Library, and audiobook content needs an internet connection and may change or become unavailable. The bundled Gutenberg texts remain available offline after they have been loaded once.
 
 ## Publish with GitHub Pages
 
