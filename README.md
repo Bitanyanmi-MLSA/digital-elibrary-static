@@ -6,7 +6,7 @@ A child-friendly digital library that runs as a static website and progressive w
 
 - Built-in stories, reading aloud, word meanings, quizzes, badges, and the Play Zone.
 - Curated Adult Project Gutenberg texts are bundled with the site and read in the app, including the source and licence notice. A few editions available only as PDFs or audio are embedded in the reader.
-- Official Ghana Ministry of Education / GES PDFs and Open Library discovery are displayed inside the app from their original publishers. Phones and tablets use the embedded Microsoft PDF viewer to avoid native PDF download handling; PDFs still require an internet connection.
+- Official Ghana Ministry of Education / GES PDFs and Open Library discovery are displayed inside the app from their original publishers. On phones and tablets, PDF links open in Google Docs Viewer in a browser tab because these devices block embedding third-party PDF viewers; this avoids downloading the PDF to a separate reader app. PDFs still require an internet connection.
 - Reading progress, favourites, badges, and stars are stored in the current browser only.
 - Offline access to the app shell and built-in stories after the first visit. Adult texts are cached locally as they are opened.
 
