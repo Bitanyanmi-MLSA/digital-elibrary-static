@@ -1,4 +1,4 @@
-const CACHE = 'elibrary-static-v3';
+const CACHE = 'elibrary-static-v4';
 const SHELL = [
   './',
   './index.html',

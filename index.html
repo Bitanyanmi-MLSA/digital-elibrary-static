@@ -396,8 +396,7 @@ function startQuiz(){stopRead();const qs=st.cur.q;let i=0,sc=0;const box=$('#qui
   const [q,o,a]=qs[i];box.innerHTML=`<div class="card"><h3>${q}</h3>`+o.map((x,j)=>`<button style="margin:4px" onclick="ans(${j},${a})">${x}</button>`).join('')+'</div>'};go()}
 function markPdf(url,title){const key='pdf:'+url;st.read[key]=1;st.meta[key]={t:title,url};save()}
 function pdfViewerUrl(url,embedded=true){return 'https://docs.google.com/gview?'+(embedded?'embedded=1&':'')+'url='+encodeURIComponent(url)}
-function needsMobilePdfViewer(){return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
-function openPdf(url,title){markPdf(url,title);const mobile=needsMobilePdfViewer();openWeb(mobile?pdfViewerUrl(url):url,title,mobile?'PDF displayed in the embedded Google Docs Viewer for mobile compatibility.':'Official PDF displayed by its publisher inside the app.');if(mobile){$('#websource').href=pdfViewerUrl(url,false);$('#websource').textContent='If needed, open this PDF in the browser-based viewer.'}}
+function openPdf(url,title){markPdf(url,title);openWeb(pdfViewerUrl(url),title,'PDF displayed in the embedded viewer. If it does not appear here, use the browser-based viewer link below.');$('#websource').href=pdfViewerUrl(url,false);$('#websource').textContent='Open this PDF in the browser-based viewer.'}
 function openWeb(url,title,note='Content is displayed from its original source inside the app.'){const frame=$('#webframe');$('#webtitle').textContent=title;$('#webnote').textContent=note;$('#websource').href=url;frame.src=url;show('webreader');window.scrollTo(0,0)}
 function closeWebReader(){$('#webframe').src='about:blank';show('home')}
 function openAudiobook(id,title){const rid='g'+id,base='https://www.gutenberg.org/files/21154/mp3/';st.read[rid]=1;st.meta[rid]={t:title,id};st.cur={id:rid,t:title,e:'🎧',age:'adult',txt:[],q:[]};save();stopRead();show('reader');
